@@ -12,10 +12,10 @@
 
 @endphp
 
-@foreach ($items->sortBy('order') as $item)
-    
+@foreach ($items as $item)
+
     @php
-    
+
         $originalItem = $item;
         if (Voyager::translatable($item)) {
             $item = $item->translate($options->locale);
@@ -51,11 +51,11 @@
         if(isset($options->icon) && $options->icon == true){
             $icon = '<i class="' . $item->icon_class . '"></i>';
         }
-        
+
     @endphp
 
     <li class="{{ $listItemClass }}">
-        <a href="{{ url($item->link()) }}" target="{{ $item->target }}" style="{{ $styles }}" {!! $linkAttributes or '' !!}>
+        <a href="{{ url($item->link()) }}" target="{{ $item->target }}" style="{{ $styles }}" {!! $linkAttributes ?? '' !!}>
             {!! $icon !!}
             <span>{{ $item->title }}</span>
             {!! $caret !!}

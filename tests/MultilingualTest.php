@@ -5,19 +5,16 @@ namespace TCG\Voyager\Tests;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use TCG\Voyager\Facades\Voyager;
+use TCG\Voyager\Models\Page;
 use TCG\Voyager\Traits\Translatable;
 use TCG\Voyager\Translator;
 use TCG\Voyager\Translator\Collection;
 
 class MultilingualTest extends TestCase
 {
-    protected $withDummy = true;
-
-    public function setUp()
+    public function setUp(): void
     {
         parent::setUp();
-
-        $this->install();
 
         // Add another language
         config()->set('voyager.multilingual.locales', ['en', 'da']);
@@ -48,15 +45,15 @@ class MultilingualTest extends TestCase
     {
         $collection = TranslatableModel::all()->translate('da');
 
-        $this->isInstanceOf(Collection::class, $collection);
-        $this->isInstanceOf(Translator::class, $collection[0]);
+        $this->assertInstanceOf(Collection::class, $collection);
+        $this->assertInstanceOf(Translator::class, $collection[0]);
     }
 
     public function testGettingTranslatorModelOfNonExistingTranslation()
     {
         $model = TranslatableModel::first()->translate('da');
 
-        $this->isInstanceOf(Translator::class, $model);
+        $this->assertInstanceOf(Translator::class, $model);
         $this->assertEquals('da', $model->getLocale());
         $this->assertEquals('Lorem Ipsum Post', $model->title);
         $this->assertFalse($model->getRawAttributes()['title']['exists']);
@@ -77,7 +74,7 @@ class MultilingualTest extends TestCase
 
         $model = TranslatableModel::first()->translate('da');
 
-        $this->isInstanceOf(Translator::class, $model);
+        $this->assertInstanceOf(Translator::class, $model);
         $this->assertEquals('da', $model->getLocale());
         $this->assertEquals('Foo Bar Post', $model->title);
         $this->assertTrue($model->getRawAttributes()['title']['exists']);
@@ -90,7 +87,7 @@ class MultilingualTest extends TestCase
     {
         $model = TranslatableModel::first()->translate('da');
 
-        $this->isInstanceOf(Translator::class, $model);
+        $this->assertInstanceOf(Translator::class, $model);
         $this->assertEquals('da', $model->getLocale());
         $this->assertEquals('Lorem Ipsum Post', $model->title);
         $this->assertFalse($model->getRawAttributes()['title']['exists']);
@@ -116,7 +113,7 @@ class MultilingualTest extends TestCase
 
         $model = TranslatableModel::first()->translate('da');
 
-        $this->isInstanceOf(Translator::class, $model);
+        $this->assertInstanceOf(Translator::class, $model);
         $this->assertEquals('da', $model->getLocale());
         $this->assertEquals('Danish Title', $model->title);
         $this->assertTrue($model->getRawAttributes()['title']['exists']);
@@ -137,7 +134,7 @@ class MultilingualTest extends TestCase
 
         $model = TranslatableModel::first()->translate('da');
 
-        $this->isInstanceOf(Translator::class, $model);
+        $this->assertInstanceOf(Translator::class, $model);
         $this->assertEquals('da', $model->getLocale());
         $this->assertEquals('Foo Bar Post', $model->title);
         $this->assertTrue($model->getRawAttributes()['title']['exists']);
@@ -163,7 +160,7 @@ class MultilingualTest extends TestCase
 
         $model = TranslatableModel::first()->translate('da');
 
-        $this->isInstanceOf(Translator::class, $model);
+        $this->assertInstanceOf(Translator::class, $model);
         $this->assertEquals('da', $model->getLocale());
         $this->assertEquals('Danish Title', $model->title);
         $this->assertTrue($model->getRawAttributes()['title']['exists']);
@@ -188,7 +185,7 @@ class MultilingualTest extends TestCase
 
         $model = TranslatableModel::first()->translate('da');
 
-        $this->isInstanceOf(Translator::class, $model);
+        $this->assertInstanceOf(Translator::class, $model);
         $this->assertEquals('da', $model->getLocale());
         $this->assertEquals('Danish Title Here', $model->title);
         $this->assertTrue($model->getRawAttributes()['title']['exists']);
@@ -208,7 +205,7 @@ class MultilingualTest extends TestCase
 
         $model = TranslatableModel::first()->translate('da');
 
-        $this->isInstanceOf(Translator::class, $model);
+        $this->assertInstanceOf(Translator::class, $model);
         $this->assertEquals('da', $model->getLocale());
         $this->assertEquals('Title', $model->title);
         $this->assertTrue($model->getRawAttributes()['title']['exists']);
@@ -217,7 +214,7 @@ class MultilingualTest extends TestCase
 
         $model->title = 'New Title';
 
-        $this->isInstanceOf(Translator::class, $model);
+        $this->assertInstanceOf(Translator::class, $model);
         $this->assertEquals('da', $model->getLocale());
         $this->assertEquals('New Title', $model->title);
         $this->assertTrue($model->getRawAttributes()['title']['exists']);
@@ -226,7 +223,7 @@ class MultilingualTest extends TestCase
 
         $model->save();
 
-        $this->isInstanceOf(Translator::class, $model);
+        $this->assertInstanceOf(Translator::class, $model);
         $this->assertEquals('da', $model->getLocale());
         $this->assertEquals('New Title', $model->title);
         $this->assertTrue($model->getRawAttributes()['title']['exists']);
@@ -235,12 +232,36 @@ class MultilingualTest extends TestCase
 
         $model = TranslatableModel::first()->translate('da');
 
-        $this->isInstanceOf(Translator::class, $model);
+        $this->assertInstanceOf(Translator::class, $model);
         $this->assertEquals('da', $model->getLocale());
         $this->assertEquals('New Title', $model->title);
         $this->assertTrue($model->getRawAttributes()['title']['exists']);
         $this->assertFalse($model->getRawAttributes()['title']['modified']);
         $this->assertEquals('da', $model->getRawAttributes()['title']['locale']);
+    }
+
+    public function testSearchingTranslations()
+    {
+        //Default locale
+        $this->assertEquals(Page::whereTranslation('slug', 'hello-world')->count(), 1);
+
+        //Default locale, but default excluded
+        $this->assertEquals(Page::whereTranslation('slug', '=', 'hello-world', [], false)->count(), 0);
+
+        //Translation, all locales
+        $this->assertEquals(Page::whereTranslation('slug', 'ola-mundo')->count(), 1);
+
+        //Translation, wrong locale-array
+        $this->assertEquals(Page::whereTranslation('slug', '=', 'ola-mundo', ['de'])->count(), 0);
+
+        //Translation, correct locale-array
+        $this->assertEquals(Page::whereTranslation('slug', '=', 'ola-mundo', ['de', 'pt'])->count(), 1);
+
+        //Translation, wrong locale
+        $this->assertEquals(Page::whereTranslation('slug', '=', 'ola-mundo', 'de')->count(), 0);
+
+        //Translation, correct locale
+        $this->assertEquals(Page::whereTranslation('slug', '=', 'ola-mundo', 'pt')->count(), 1);
     }
 }
 

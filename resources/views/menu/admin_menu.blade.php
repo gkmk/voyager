@@ -1,93 +1,47 @@
+@section('admin-menu')
 <ul class="nav navbar-nav">
-
-@php
-    if (Voyager::translatable($items)) {
-        $items = $items->load('translations');
-    }
-
-@endphp
-
-@foreach ($items->sortBy('order') as $item)
-    
-    @php
-        $originalItem = $item;
-        if (Voyager::translatable($item)) {
-            $item = $item->translate($options->locale);
-        }
-
-        // TODO - still a bit ugly - can move some of this stuff off to a helper in the future.
-        $listItemClass = [];
-        $styles = null;
-        $linkAttributes = null;
-
-        if(url($item->link()) == url()->current())
-        {
-            array_push($listItemClass,'active');
-        }
-
-        // With Children Attributes
-        if(!$originalItem->children->isEmpty())
-        {
-            foreach($originalItem->children as $children)
-            {
-                if(url($children->link()) == url()->current())
-                {
-                    array_push($listItemClass,'active');
-                }
-            }
-            $linkAttributes =  'href="#' . str_slug($item->title, '-') .'-dropdown-element" data-toggle="collapse" aria-expanded="'. (in_array('active', $listItemClass) ? 'true' : 'false').'"';
-            array_push($listItemClass, 'dropdown');
-        }
-        else
-        {
-            $linkAttributes =  'href="' . url($item->link()) .'"';
-        }
-
-        // Permission Checker
-        $self_prefix = str_replace('/', '\/', $options->user->prefix);
-        $slug = str_replace('/', '', preg_replace('/^\/'.$self_prefix.'/', '', $item->link()));
-
-        if ($slug != '') {
-            // Get dataType using slug
-            $dataType = $options->user->dataTypes->first(function ($value) use ($slug) {
-                return $value->slug == $slug;
-            });
-
-            if ($dataType) {
-                // Check if datatype permission exist
-                $exist = $options->user->permissions->first(function ($value) use ($dataType) {
-                    return $value->key == 'browse_'.$dataType->name;
-                });
-            } else {
-                // Check if admin permission exists
-                $exist = $options->user->permissions->first(function ($value) use ($slug) {
-                    return $value->key == 'browse_'.$slug && is_null($value->table_name);
-                });
-            }
-
-            if ($exist) {
-                // Check if current user has access
-                if (!in_array($exist->key, $options->user->user_permissions)) {
-                    continue;
-                }
-            }
-        }
-        
-    @endphp
-
-    <li class="{{ implode(" ", $listItemClass) }}">
-        <a {!! $linkAttributes !!} target="{{ $item->target }}">
-            <span class="icon {{ $item->icon_class }}"></span>
-            <span class="title">{{ $item->title }}</span>
+    <li v-for="(item, i) in items" :class="classes(item)">
+        <a :target="item.target" :href="item.children.length > 0 ? '#'+item.id+'-dropdown-element' : item.href" :style="'color:'+color(item)" v-bind:data-toggle="item.children.length > 0 ? 'collapse' : false" :aria-expanded="item.children.length > 0 ? String(item.active) : false">
+            <span :class="'icon '+item.icon_class"></span>
+            <span class="title">@{{ item.title }}</span>
         </a>
-        @if(!$originalItem->children->isEmpty())
-        <div id="{{ str_slug($originalItem->title, '-') }}-dropdown-element" class="panel-collapse collapse {{ (in_array('active', $listItemClass) ? 'in' : '') }}">
+        <div v-if="item.children.length > 0" :id="item.id+'-dropdown-element'" :class="'panel-collapse collapse' + (item.active ? ' in' : ' ')">
             <div class="panel-body">
-                @include('voyager::menu.admin_menu', ['items' => $originalItem->children, 'options' => $options, 'innerLoop' => true])
+                <admin-menu :items="item.children"></admin-menu>
             </div>
         </div>
-        @endif
     </li>
-@endforeach
-
 </ul>
+@endsection
+<script>
+Vue.component('admin-menu', {
+    template: `@yield('admin-menu')`,
+    props: {
+        items: {
+            type: Array,
+            default: [],
+        }
+    },
+    methods: {
+        classes: function(item) {
+            var classes = [];
+            if (item.children.length > 0) {
+                classes.push('dropdown');
+            }
+            if (item.active) {
+                classes.push('active');
+            }
+
+
+            return classes.join(' ');
+        },
+        color: function(item) {
+            if (item.color && item.color != '#000000') {
+                return item.color;
+            }
+
+            return '';
+        }
+    }
+});
+</script>

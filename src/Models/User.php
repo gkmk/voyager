@@ -3,28 +3,45 @@
 namespace TCG\Voyager\Models;
 
 use Carbon\Carbon;
-use Illuminate\Foundation\Auth\User as AuthUser;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use TCG\Voyager\Contracts\User as UserContract;
 use TCG\Voyager\Traits\VoyagerUser;
 
-class User extends AuthUser
+class User extends Authenticatable implements UserContract
 {
     use VoyagerUser;
 
     protected $guarded = [];
 
-    /**
-     * On save make sure to set the default avatar if image is not set.
-     */
-    public function save(array $options = [])
-    {
-        // If no avatar has been set, set it to the default
-        $this->avatar = $this->avatar ?: config('voyager.user.default_avatar', 'users/default.png');
+    public $additional_attributes = ['locale'];
 
-        parent::save();
+    public function getAvatarAttribute($value)
+    {
+        return $value ?? config('voyager.user.default_avatar', 'users/default.png');
     }
 
     public function setCreatedAtAttribute($value)
     {
         $this->attributes['created_at'] = Carbon::parse($value)->format('Y-m-d H:i:s');
+    }
+
+    public function setSettingsAttribute($value)
+    {
+        $this->attributes['settings'] = $value->toJson();
+    }
+
+    public function getSettingsAttribute($value)
+    {
+        return collect(json_decode($value));
+    }
+
+    public function setLocaleAttribute($value)
+    {
+        $this->settings = $this->settings->merge(['locale' => $value]);
+    }
+
+    public function getLocaleAttribute()
+    {
+        return $this->settings->get('locale');
     }
 }

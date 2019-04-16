@@ -33,17 +33,27 @@ class AdminCommand extends Command
         ];
     }
 
+    public function fire()
+    {
+        return $this->handle();
+    }
+
     /**
      * Execute the console command.
      *
      * @return void
      */
-    public function fire()
+    public function handle()
     {
         // Get or create user
         $user = $this->getUser(
             $this->option('create')
         );
+
+        // the user not returned
+        if (!$user) {
+            exit;
+        }
 
         // Get or create role
         $role = $this->getAdministratorRole();
@@ -106,25 +116,32 @@ class AdminCommand extends Command
     {
         $email = $this->argument('email');
 
-        $model = config('voyager.user.namespace', 'App\\User');
+        $model = config('voyager.user.namespace') ?: config('auth.providers.users.model');
 
         // If we need to create a new user go ahead and create it
         if ($create) {
             $name = $this->ask('Enter the admin name');
             $password = $this->secret('Enter admin password');
+            $confirmPassword = $this->secret('Confirm Password');
 
             // Ask for email if there wasnt set one
             if (!$email) {
                 $email = $this->ask('Enter the admin email');
             }
 
+            // Passwords don't match
+            if ($password != $confirmPassword) {
+                $this->info("Passwords don't match");
+
+                return;
+            }
+
             $this->info('Creating admin account');
 
             return $model::create([
-                'name'             => $name,
-                'email'            => $email,
-                'password'         => Hash::make($password),
-                'avatar'           => 'users/default.png',
+                'name'     => $name,
+                'email'    => $email,
+                'password' => Hash::make($password),
             ]);
         }
 

@@ -12,9 +12,10 @@ class PermissionsTableSeeder extends Seeder
     {
         $keys = [
             'browse_admin',
+            'browse_bread',
             'browse_database',
             'browse_media',
-            'browse_settings',
+            'browse_compass',
         ];
 
         foreach ($keys as $key) {
@@ -26,14 +27,10 @@ class PermissionsTableSeeder extends Seeder
 
         Permission::generateFor('menus');
 
-        Permission::generateFor('pages');
-
         Permission::generateFor('roles');
 
         Permission::generateFor('users');
 
-        Permission::generateFor('posts');
-
-        Permission::generateFor('categories');
+        Permission::generateFor('settings');
     }
 }

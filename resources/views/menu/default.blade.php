@@ -8,10 +8,10 @@
 
 @endphp
 
-@foreach ($items->sortBy('order') as $item)
+@foreach ($items as $item)
 
     @php
-    
+
         $originalItem = $item;
         if (Voyager::translatable($item)) {
             $item = $item->translate($options->locale);

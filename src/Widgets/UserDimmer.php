@@ -2,10 +2,10 @@
 
 namespace TCG\Voyager\Widgets;
 
-use Arrilot\Widgets\AbstractWidget;
+use Illuminate\Support\Str;
 use TCG\Voyager\Facades\Voyager;
 
-class UserDimmer extends AbstractWidget
+class UserDimmer extends BaseDimmer
 {
     /**
      * The configuration array.
@@ -21,17 +21,27 @@ class UserDimmer extends AbstractWidget
     public function run()
     {
         $count = Voyager::model('User')->count();
-        $string = $count == 1 ? 'user' : 'users';
+        $string = trans_choice('voyager::dimmer.user', $count);
 
         return view('voyager::dimmer', array_merge($this->config, [
             'icon'   => 'voyager-group',
             'title'  => "{$count} {$string}",
-            'text'   => "You have {$count} {$string} in your database. Click on button below to view all users.",
+            'text'   => __('voyager::dimmer.user_text', ['count' => $count, 'string' => Str::lower($string)]),
             'button' => [
-                'text' => 'View all users',
+                'text' => __('voyager::dimmer.user_link_text'),
                 'link' => route('voyager.users.index'),
             ],
-            'image' => voyager_asset('images/widget-backgrounds/02.png'),
+            'image' => voyager_asset('images/widget-backgrounds/01.jpg'),
         ]));
+    }
+
+    /**
+     * Determine if the widget should be displayed.
+     *
+     * @return bool
+     */
+    public function shouldBeDisplayed()
+    {
+        return app('VoyagerAuth')->user()->can('browse', Voyager::model('User'));
     }
 }
