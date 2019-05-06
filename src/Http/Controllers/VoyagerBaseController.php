@@ -487,8 +487,12 @@ class VoyagerBaseController extends Controller
         // Delete Files
         foreach ($dataType->deleteRows->where('type', 'file') as $row) {
             if (isset($data->{$row->field})) {
-                foreach (json_decode($data->{$row->field}) as $file) {
-                    $this->deleteFileIfExists($file->download_link);
+                if(json_decode($data->{$row->field})) {
+                    foreach (json_decode($data->{$row->field}) as $file) {
+                        $this->deleteFileIfExists($file->download_link);
+                    }
+                } else {
+                    $this->deleteFileIfExists($data->{$row->field});
                 }
             }
         }
